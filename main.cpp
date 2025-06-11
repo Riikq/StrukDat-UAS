@@ -158,10 +158,10 @@ void render() {
 
 // loop semuanya
 int main() {
-    cout << "Simple Rocket Game" << endl;
-    cout << "Use WASD keys to move your rocket (^)" << endl;
-    cout << "Avoid halangan (*)" << endl;
-    cout << "Press any key to start..." << endl;
+    cout << "Rocket Runner" << endl;
+    cout << "Gunakkan WASD untuk menggerakan roketmu (X)" << endl;
+    cout << "Hindari halangan (*)" << endl;
+    cout << "Tekan tombol apapun untuk mulai..." << endl;
     _getch();
     
     init();
