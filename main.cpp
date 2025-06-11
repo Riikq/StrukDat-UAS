@@ -1,19 +1,21 @@
 #include <iostream>
 #include <vector>
-#include <conio.h>   // For _getch()
-#include <windows.h> // For Sleep()
-#include <cstdlib>   // For rand() and srand()
-#include <ctime>     // For time()
-#include <algorithm> // For remove_if
+#include <conio.h>
+#include <windows.h>
+#include <cstdlib>
+#include <ctime>
+#include <algorithm>
+#include <fstream>
+#include <string>
 
 using namespace std;
 
 // Konstanta game
 const int LEBAR = 40;
 const int TINGGI = 20;
-const int FPS = 100; // milliseconds per frame
+const int FPS = 100;
 
-// Objek visual
+// Objek game
 const char player = 'X';
 const char rintangan = '*';
 const char kosong = ' ';
@@ -21,14 +23,14 @@ const char kosong = ' ';
 // Status
 bool gameOver = false;
 int score = 0;
-int level = 1; // Tambahan: variabel global level
+int level = 1;
 
-// Posisi player
+// Posisi pemain
 struct Posisi {
     int x, y;
 };
 
-// Tree untuk menyimpan level
+// Node untuk level
 struct TreeNode {
     int level;
     TreeNode* left;
@@ -37,8 +39,8 @@ struct TreeNode {
     TreeNode(int lvl) : level(lvl), left(nullptr), right(nullptr) {}
 };
 
-// Deklarasi global untuk tree level
-TreeNode* root = new TreeNode(1); // Mulai dari level 1
+// Tree level
+TreeNode* root = new TreeNode(1);
 TreeNode* currentLevelNode = root;
 
 Posisi playerPos;
@@ -51,7 +53,7 @@ void layarBersih() {
     SetConsoleCursorPosition(hOut, Posisi);
 }
 
-// Efek visual naik level
+// Efek naik level
 void efekLevelUp(int levelBaru) {
     layarBersih();
     string pesan = "=== LEVEL " + to_string(levelBaru) + " ===";
@@ -69,12 +71,12 @@ void efekLevelUp(int levelBaru) {
     }
 }
 
-// Fungsi naik level
+// Naik level
 void naikLevel() {
     if (level < 3) {
-        TreeNode* newLevelNode = new TreeNode(level + 1);
-        currentLevelNode->left = newLevelNode;
-        currentLevelNode = newLevelNode;
+        TreeNode* newNode = new TreeNode(level + 1);
+        currentLevelNode->left = newNode;
+        currentLevelNode = newNode;
         level++;
         efekLevelUp(level);
     }
@@ -94,7 +96,7 @@ void init() {
     currentLevelNode = root;
 }
 
-// Input keyboard
+// Input WASD
 void handleInput() {
     if (_kbhit()) {
         char key = _getch();
@@ -120,18 +122,18 @@ void handleInput() {
     }
 }
 
-// Update game tiap frame
+// Update game
 void update() {
     if (score > 0 && score % 200 == 0) {
         naikLevel();
     }
 
-    int peluangMuncul = max(1, 5 - level); // Minimal peluang = 1
-    if (rand() % peluangMuncul == 0) {
-        Posisi h;
-        h.x = rand() % LEBAR;
-        h.y = 0;
-        halangan.push_back(h);
+    int peluang = max(1, 5 - level);
+    if (rand() % peluang == 0) {
+        Posisi obs;
+        obs.x = rand() % LEBAR;
+        obs.y = 0;
+        halangan.push_back(obs);
     }
 
     for (auto& h : halangan) h.y++;
@@ -152,7 +154,7 @@ void update() {
     score++;
 }
 
-// Render layar
+// Tampilkan ke layar
 void render() {
     vector<vector<char>> buffer(TINGGI, vector<char>(LEBAR, kosong));
 
@@ -179,26 +181,61 @@ void render() {
     cout << endl;
 }
 
+// Simpan skor ke file
+void simpanRiwayatSkor(int skor) {
+    ofstream file("riwayat_skor.txt", ios::app);
+    if (file.is_open()) {
+        time_t now = time(0);
+        char* dt = ctime(&now);
+        dt[strlen(dt) - 1] = '\0'; // hilangkan newline
+        file << dt << " | Skor: " << skor << endl;
+        file.close();
+    }
+}
+
+// Tampilkan skor sebelumnya
+void tampilkanRiwayatSkor() {
+    ifstream file("riwayat_skor.txt");
+    string line;
+    cout << "\n=== Riwayat Skor Sebelumnya ===" << endl;
+    if (file.is_open()) {
+        while (getline(file, line)) {
+            cout << line << endl;
+        }
+        file.close();
+    } else {
+        cout << "Belum ada riwayat skor." << endl;
+    }
+}
+
 // Main
 int main() {
-    cout << "Rocket Runner" << endl;
-    cout << "Gunakan WASD untuk menggerakkan roketmu (X)" << endl;
-    cout << "Hindari halangan (*)" << endl;
-    cout << "Tekan tombol apapun untuk mulai..." << endl;
-    _getch();
+    while (true) {
+        cout << "Rocket Runner" << endl;
+        cout << "Gunakan WASD untuk menggerakkan roketmu (X)" << endl;
+        cout << "Hindari halangan (*)" << endl;
+        cout << "Tekan tombol apapun untuk mulai..." << endl;
+        tampilkanRiwayatSkor();
+        _getch();
 
-    init();
+        init();
 
-    while (!gameOver) {
-        handleInput();
-        update();
-        render();
-        Sleep(FPS);
+        while (!gameOver) {
+            handleInput();
+            update();
+            render();
+            Sleep(FPS);
+        }
+
+        simpanRiwayatSkor(score);
+        cout << "\nGame Over! Skormu: " << score << endl;
+        cout << "Tekan R untuk main lagi atau tombol lain untuk keluar..." << endl;
+
+        char pilihan = _getch();
+        if (pilihan != 'r' && pilihan != 'R') break;
+
+        gameOver = false;
     }
-
-    cout << "\nGame Over! Skormu: " << score << endl;
-    cout << "Tekan tombol apapun untuk keluar..." << endl;
-    _getch();
 
     return 0;
 }
