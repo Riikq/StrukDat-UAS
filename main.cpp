@@ -11,7 +11,7 @@ using namespace std;
 // Konstanta game
 const int LEBAR = 40;
 const int TINGGI = 20;
-const int FPS = 100; // milliseconds between frames
+const int FPS = 100; // milliseconds per frame
 
 // Objek visual
 const char player = 'X';
