@@ -1,0 +1,5 @@
+Thu Jun 12 06:02:43 2025 | Skor: 39
+Thu Jun 12 06:04:23 2025 | Skor: 392
+Thu Jun 12 11:37:57 2025 | Skor: 109
+Thu Jun 12 11:38:50 2025 | Skor: 79
+Thu Jun 12 11:40:01 2025 | Skor: 84
