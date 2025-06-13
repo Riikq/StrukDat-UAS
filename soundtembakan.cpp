@@ -1,0 +1,23 @@
+#ifndef SOUND_MANAGER_H
+#define SOUND_MANAGER_H
+
+#include <windows.h> // Diperlukan untuk PlaySound
+#include <mmsystem.h> // Diperlukan untuk PlaySound
+#pragma comment(lib, "winmm.lib") // Pastikan linking dengan library winmm.lib
+
+// Fungsi untuk memutar suara tembak
+void playShootSound() {
+    PlaySound(TEXT("shoot.wav"), NULL, SND_ASYNC | SND_FILENAME);
+}
+
+// Fungsi untuk memutar suara ketika peluru mengenai target
+void playHitSound() {
+    PlaySound(TEXT("hit.wav"), NULL, SND_ASYNC | SND_FILENAME);
+}
+
+// Fungsi untuk memutar suara ketika roket menabrak
+void playExplodeSound() {
+    PlaySound(TEXT("explode.wav"), NULL, SND_ASYNC | SND_FILENAME);
+}
+
+#endif // SOUND_MANAGER_H 
