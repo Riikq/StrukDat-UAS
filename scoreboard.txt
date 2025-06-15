@@ -1,1 +1,4 @@
 wici 0
+wici 120
+wici 50
+wici 270

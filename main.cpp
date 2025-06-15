@@ -203,7 +203,7 @@ void mulaiGame(const string& username) {
 
         DWORD now = GetTickCount();
 
-        if (now - lastShoot >= 300) {
+        if (now - lastShoot >= 2200) {
             peluruQueue.push({ player.x, player.y - 1 });
             if (powerUpActive) {
                 if (player.x > 0) peluruQueue.push({ player.x - 1, player.y - 1 });
