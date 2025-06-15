@@ -25,11 +25,10 @@ const char EMPTY = ' ';
 
 // ================ SOUND ===================
 void playSound(const string& file) {
-    string path = "sound_effects/" + file;
-    PlaySoundA(path.c_str(), NULL, SND_ASYNC | SND_FILENAME);
+    PlaySoundA(file.c_str(), NULL, SND_ASYNC | SND_FILENAME);
 }
 void shootSound()   { playSound("sound_effects/Shoot.wav"); }
-void explodeSound() { playSound("sound_efects/Explode.wav"); }
+void explodeSound() { playSound("sound_effects/Explode.wav"); }
 void hitSound()     { playSound("sound_effects/Hit.wav"); }
 
 // ================ POSITIONS ===============
@@ -97,6 +96,28 @@ void render() {
 }
 
 // ================ UPDATE ==================
+void checkBulletCollision() {
+    queue<Posisi> remaining;
+    while (!peluruQueue.empty()) {
+        Posisi bullet = peluruQueue.front(); peluruQueue.pop();
+        bool hit = false;
+
+        for (size_t i = 0; i < stars.size(); i++) {
+            if (isCollide(bullet, stars[i])) {
+                skor += 10;
+                hitSound();
+                stars.erase(stars.begin() + i);
+                hit = true;
+                break;
+            }
+        }
+
+        if (!hit && bullet.y >= 0)
+            remaining.push(bullet);
+    }
+    peluruQueue = remaining;
+}
+
 void updatePeluru() {
     queue<Posisi> updated;
     while (!peluruQueue.empty()) {
@@ -133,28 +154,6 @@ void updatePowerUps() {
         }
     }
     powerUps = newPowerUps;
-}
-
-void checkBulletCollision() {
-    queue<Posisi> remaining;
-    while (!peluruQueue.empty()) {
-        Posisi bullet = peluruQueue.front(); peluruQueue.pop();
-        bool hit = false;
-
-        for (size_t i = 0; i < stars.size(); i++) {
-            if (isCollide(bullet, stars[i])) {
-                skor += 10;
-                hitSound();
-                stars.erase(stars.begin() + i);
-                hit = true;
-                break;
-            }
-        }
-
-        if (!hit && bullet.y >= 0)
-            remaining.push(bullet);
-    }
-    peluruQueue = remaining;
 }
 
 // ================ SCORE SYSTEM ============
@@ -214,7 +213,7 @@ void mulaiGame(const string& username) {
         }
 
         if (now - lastStar > 200) {
-            spawnStar(); spawnStar(); // double star per tick
+            spawnStar(); spawnStar();
             lastStar = now;
         }
 
@@ -227,10 +226,10 @@ void mulaiGame(const string& username) {
             powerUpActive = false;
         }
 
+        checkBulletCollision(); // must be before updatePeluru
         updatePeluru();
         updateStars();
         updatePowerUps();
-        checkBulletCollision();
         render();
         Sleep(FPS);
     }
