@@ -75,27 +75,3 @@ string login() {
     return "";
 }
 
-int main() {
-    int pilihan;
-    string userLogin;
-
-    cout << "=== SELAMAT DATANG DI ROCKET GAMES ===" << endl;
-    cout << "1. Login\n2. Register Akun\nPilih: ";
-    cin >> pilihan;
-
-    if (pilihan == 2) {
-        registerAkun();
-    }
-
-    userLogin = login();
-
-    if (userLogin != "") {
-        // lanjut ke menu utama game
-        cout << "Masuk ke game sebagai: " << userLogin << endl;
-        // nanti userLogin bisa disimpan ke leaderboard
-    } else {
-        return 0;
-    }
-
-    return 0;
-}

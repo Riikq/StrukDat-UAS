@@ -44,37 +44,3 @@ struct Queue {
     }
 };
 
-// Program utama
-int main() {
-    Queue pemainQueue;
-    int pilihan = 0;
-
-    while (pilihan != 3) {
-        cout << "\n=== MENU ROCKET GAMES ===\n";
-        cout << "1. Mulai Permainan\n";
-        cout << "2. Lihat Skor dan Riwayat\n";
-        cout << "3. Keluar\n";
-        cout << "Pilih: ";
-        cin >> pilihan;
-        cin.ignore();
-
-        if (pilihan == 1) {
-            char nama[50];
-            cout << "\nGame dimulai...\n";
-            cout << "Masukkan nama pemain: ";
-            cin.getline(nama, 50);
-            pemainQueue.enqueue(nama);
-        } 
-        else if (pilihan == 2) {
-            pemainQueue.tampilkan();
-        } 
-        else if (pilihan == 3) {
-            cout << "\nTerima kasih telah bermain.\n";
-        } 
-        else {
-            cout << "Pilihan tidak valid!\n";
-        }
-    }
-
-    return 0;
-}

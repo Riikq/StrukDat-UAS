@@ -40,13 +40,3 @@ void updatePeluru() {
     }
 }
 
-int main() {
-    char input;
-    while (true) {
-        tampilkan();
-        cin >> input;
-        if (input == ' ') tembak();
-        updatePeluru();
-    }
-    return 0;
-}

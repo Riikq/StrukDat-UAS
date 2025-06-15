@@ -63,28 +63,3 @@ void update() {
     peluruQueue = updatedPeluru;
 }
 
-int main() {
-    DWORD lastShoot = 0;
-
-    while (true) {
-        if (_kbhit()) {
-            char ch = _getch();
-            if (ch == 'a' && player.x > 0) player.x--;
-            if (ch == 'd' && player.x < LEBAR - 1) player.x++;
-            if (ch == 'q') break;
-        }
-
-        // Tembakan otomatis setiap 300ms
-        DWORD now = GetTickCount();
-        if (now - lastShoot >= 300) {
-            peluruQueue.push({player.x, player.y - 1});
-            lastShoot = now;
-        }
-
-        update();
-        render(peluruQueue);
-        Sleep(FPS);
-    }
-
-    return 0;
-}

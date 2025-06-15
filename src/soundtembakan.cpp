@@ -3,7 +3,6 @@
 
 #include <windows.h> // Diperlukan untuk PlaySound
 #include <mmsystem.h> // Diperlukan untuk PlaySound
-#pragma comment(lib, "winmm.lib") // Pastikan linking dengan library winmm.lib
 
 // Fungsi untuk memutar suara tembak
 void playShootSound() {

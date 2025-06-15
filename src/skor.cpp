@@ -27,17 +27,3 @@ void tampilkanRiwayat() {
     cout << "====================\n";
 }
 
-int main() {
-    int skorTerakhir = 5; // Misalnya hasil dari permainan adalah 5 poin
-
-    cout << "Permainan selesai.\n";
-    cout << "Skor Anda: " << skorTerakhir << endl;
-
-    // Simpan skor ke riwayat
-    simpanSkor(skorTerakhir);
-
-    // Tampilkan semua riwayat
-    tampilkanRiwayat();
-
-    return 0;
-}
