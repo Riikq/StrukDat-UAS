@@ -25,14 +25,12 @@ const char EMPTY = ' ';
 
 // ================ SOUND ===================
 void playSound(const string& file) {
-    string fullPath = "sound_effects/" + file;
-    PlaySoundA(fullPath.c_str(), NULL, SND_ASYNC | SND_FILENAME);
+    string path = "sound_effects/" + file;
+    PlaySoundA(path.c_str(), NULL, SND_ASYNC | SND_FILENAME);
 }
-
-void shootSound()   { playSound("Shoot.wav"); }
-void explodeSound() { playSound("Explode.wav"); }
-void hitSound()     { playSound("Hit.wav"); }
-void powerupSound() { playSound("PowerUp.wav"); }
+void shootSound()   { playSound("sound_effects/Shoot.wav"); }
+void explodeSound() { playSound("sound_efects/Explode.wav"); }
+void hitSound()     { playSound("sound_effects/Hit.wav"); }
 
 // ================ POSITIONS ===============
 struct Posisi { int x, y; };
@@ -70,17 +68,14 @@ void spawnPowerUp() {
 void render() {
     vector<vector<char>> layar(TINGGI, vector<char>(LEBAR, EMPTY));
 
-    // Draw stars
     for (auto& s : stars)
         if (s.y >= 0 && s.y < TINGGI)
             layar[s.y][s.x] = STAR_CHAR;
 
-    // Draw powerUps
     for (auto& p : powerUps)
         if (p.y >= 0 && p.y < TINGGI)
             layar[p.y][p.x] = POWERUP_CHAR;
 
-    // Draw bullets
     queue<Posisi> copy = peluruQueue;
     while (!copy.empty()) {
         Posisi p = copy.front(); copy.pop();
@@ -88,13 +83,11 @@ void render() {
             layar[p.y][p.x] = PELURU_CHAR;
     }
 
-    // Draw player
     layar[player.y][player.x] = PLAYER_CHAR;
 
     layarBersih();
-    for (int y = 0; y < TINGGI; y++) {
-        for (int x = 0; x < LEBAR; x++)
-            cout << layar[y][x];
+    for (auto& row : layar) {
+        for (char c : row) cout << c;
         cout << endl;
     }
 
@@ -135,7 +128,6 @@ void updatePowerUps() {
         if (isCollide(p, player)) {
             powerUpActive = true;
             powerUpStart = GetTickCount();
-            powerupSound();
         } else if (p.y < TINGGI) {
             newPowerUps.push_back(p);
         }
@@ -144,22 +136,25 @@ void updatePowerUps() {
 }
 
 void checkBulletCollision() {
-    vector<Posisi> newStars;
+    queue<Posisi> remaining;
     while (!peluruQueue.empty()) {
         Posisi bullet = peluruQueue.front(); peluruQueue.pop();
         bool hit = false;
+
         for (size_t i = 0; i < stars.size(); i++) {
             if (isCollide(bullet, stars[i])) {
-                hitSound();
                 skor += 10;
+                hitSound();
                 stars.erase(stars.begin() + i);
                 hit = true;
                 break;
             }
         }
+
         if (!hit && bullet.y >= 0)
-            peluruQueue.push(bullet);
+            remaining.push(bullet);
     }
+    peluruQueue = remaining;
 }
 
 // ================ SCORE SYSTEM ============
@@ -203,24 +198,27 @@ void mulaiGame(const string& username) {
             char ch = _getch();
             if (ch == 'a' && player.x > 0) player.x--;
             if (ch == 'd' && player.x < LEBAR - 1) player.x++;
-            if (ch == ' ' || ch == 'w') {
-                peluruQueue.push({ player.x, player.y - 1 });
-                if (powerUpActive) {
-                    if (player.x > 0) peluruQueue.push({ player.x - 1, player.y - 1 });
-                    if (player.x < LEBAR - 1) peluruQueue.push({ player.x + 1, player.y - 1 });
-                }
-                shootSound();
-            }
             if (ch == 'q') break;
         }
 
         DWORD now = GetTickCount();
-        if (now - lastStar > 700) {
-            spawnStar();
+
+        if (now - lastShoot >= 300) {
+            peluruQueue.push({ player.x, player.y - 1 });
+            if (powerUpActive) {
+                if (player.x > 0) peluruQueue.push({ player.x - 1, player.y - 1 });
+                if (player.x < LEBAR - 1) peluruQueue.push({ player.x + 1, player.y - 1 });
+            }
+            shootSound();
+            lastShoot = now;
+        }
+
+        if (now - lastStar > 200) {
+            spawnStar(); spawnStar(); // double star per tick
             lastStar = now;
         }
 
-        if (now - lastPower > 5000) {
+        if (now - lastPower > 6000) {
             spawnPowerUp();
             lastPower = now;
         }
