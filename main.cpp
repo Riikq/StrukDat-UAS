@@ -3,180 +3,108 @@
 #include <string>
 #include <stack>
 #include <queue>
+#include <vector>
 #include <windows.h>
 #include <conio.h>
-#include <vector>
-#include <cstring>
 #include <mmsystem.h>
+#include <algorithm>
+#include <ctime>
 #pragma comment(lib, "winmm.lib")
 
 using namespace std;
 
-// ====== Login System ======
-bool akunTerdaftar(const string& username, const string& password) {
-    ifstream file("akun.txt");
-    string user, pass;
-    while (file >> user >> pass)
-        if (user == username && pass == password)
-            return true;
-    return false;
+// ================= CONFIG =================
+const int LEBAR = 50;
+const int TINGGI = 25;
+const int FPS = 50;
+const char PLAYER_CHAR = 'A';
+const char PELURU_CHAR = '|';
+const char STAR_CHAR = '*';
+const char POWERUP_CHAR = 'P';
+const char EMPTY = ' ';
+
+// ================ SOUND ===================
+void playSound(const string& file) {
+    string fullPath = "sound_effects/" + file;
+    PlaySoundA(fullPath.c_str(), NULL, SND_ASYNC | SND_FILENAME);
 }
 
-bool usernameSudahAda(const string& username) {
-    ifstream file("akun.txt");
-    string user, pass;
-    while (file >> user >> pass)
-        if (user == username)
-            return true;
-    return false;
-}
+void shootSound()   { playSound("Shoot.wav"); }
+void explodeSound() { playSound("Explode.wav"); }
+void hitSound()     { playSound("Hit.wav"); }
+void powerupSound() { playSound("PowerUp.wav"); }
 
-void registerAkun() {
-    string username, password;
-    cout << "\n=== REGISTRASI AKUN ===\nUsername: ";
-    cin >> username;
-    if (usernameSudahAda(username)) {
-        cout << "Username sudah terdaftar.\n";
-        return;
-    }
-    cout << "Password: ";
-    cin >> password;
-    ofstream file("akun.txt", ios::app);
-    file << username << " " << password << endl;
-    cout << "Akun berhasil dibuat!\n";
-}
-
-string login() {
-    string username, password;
-    int attempts = 3;
-    cout << "\n=== LOGIN ===\n";
-    while (attempts--) {
-        cout << "Username: "; cin >> username;
-        cout << "Password: "; cin >> password;
-        if (akunTerdaftar(username, password)) {
-            cout << "\nLogin berhasil!\n";
-            return username;
-        } else {
-            cout << "Salah. Sisa: " << attempts << "\n";
-        }
-    }
-    return "";
-}
-
-// ====== Sound Manager ======
-void playShootSound() {
-    PlaySound(TEXT("sound_effects/Shoot.wav"), NULL, SND_ASYNC | SND_FILENAME);
-}
-void playHitSound() {
-    PlaySound(TEXT("sound_effects/Hit.wav"), NULL, SND_ASYNC | SND_FILENAME);
-}
-void playExplodeSound() {
-    PlaySound(TEXT("sound_effects/Explode.wav"), NULL, SND_ASYNC | SND_FILENAME);
-}
-
-// ====== Skor Handling ======
-const int MAKS_RIWAYAT = 10;
-int riwayatSkor[MAKS_RIWAYAT];
-int jumlahRiwayat = 0;
-
-void simpanSkor(int skor) {
-    if (jumlahRiwayat < MAKS_RIWAYAT)
-        riwayatSkor[jumlahRiwayat++] = skor;
-    else {
-        for (int i = 1; i < MAKS_RIWAYAT; i++)
-            riwayatSkor[i - 1] = riwayatSkor[i];
-        riwayatSkor[MAKS_RIWAYAT - 1] = skor;
-    }
-}
-
-void tampilkanRiwayat() {
-    cout << "\n=== Riwayat Skor ===\n";
-    for (int i = 0; i < jumlahRiwayat; i++)
-        cout << "Permainan ke-" << (i + 1) << ": " << riwayatSkor[i] << endl;
-}
-
-// ====== Leaderboard BST ======
-struct Node {
-    string name;
-    int score;
-    Node* left, *right;
-    Node(string n, int s) : name(n), score(s), left(NULL), right(NULL) {}
-};
-
-class Leaderboard {
-private:
-    Node* root;
-    stack<pair<string, int>> scoreHistory;
-
-    Node* insert(Node* node, string name, int score) {
-        if (!node) return new Node(name, score);
-        if (score < node->score)
-            node->left = insert(node->left, name, score);
-        else
-            node->right = insert(node->right, name, score);
-        return node;
-    }
-
-    void printInOrder(Node* node) {
-        if (!node) return;
-        printInOrder(node->right);
-        cout << node->name << " - " << node->score << endl;
-        printInOrder(node->left);
-    }
-
-public:
-    Leaderboard() : root(NULL) {}
-
-    void addScore(const string& name, int score) {
-        root = insert(root, name, score);
-        scoreHistory.push({name, score});
-    }
-
-    void showLeaderboard() {
-        cout << "\n=== LEADERBOARD ===\n";
-        printInOrder(root);
-    }
-
-    void showHistory() {
-        cout << "\n=== RIWAYAT SKOR (Stack) ===\n";
-        stack<pair<string, int>> temp = scoreHistory;
-        while (!temp.empty()) {
-            auto [n, s] = temp.top();
-            cout << n << " - " << s << endl;
-            temp.pop();
-        }
-    }
-};
-
-// ====== Permainan Rocket ======
-const int LEBAR = 20, TINGGI = 10, FPS = 100;
-const char PLAYER_CHAR = 'X', PELURU_CHAR = '|', KOSONG = ' ';
-
+// ================ POSITIONS ===============
 struct Posisi { int x, y; };
-Posisi player = {LEBAR / 2, TINGGI - 1};
+Posisi player = { LEBAR / 2, TINGGI - 1 };
 queue<Posisi> peluruQueue;
+vector<Posisi> stars;
+vector<Posisi> powerUps;
 
+// ================ GAME STATE ==============
+int skor = 0;
+bool gameOver = false;
+bool powerUpActive = false;
+DWORD powerUpStart = 0;
+const int POWERUP_DURATION = 5000;
+
+// ================ UTILITY =================
 void layarBersih() {
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleCursorPosition(hOut, {0, 0});
+    SetConsoleCursorPosition(hOut, { 0, 0 });
 }
 
-void render(queue<Posisi> peluruCopy) {
-    vector<vector<char>> layar(TINGGI, vector<char>(LEBAR, KOSONG));
-    while (!peluruCopy.empty()) {
-        Posisi p = peluruCopy.front(); peluruCopy.pop();
-        if (p.y >= 0 && p.y < TINGGI) layar[p.y][p.x] = PELURU_CHAR;
+bool isCollide(Posisi a, Posisi b) {
+    return a.x == b.x && a.y == b.y;
+}
+
+void spawnStar() {
+    stars.push_back({ rand() % LEBAR, 0 });
+}
+
+void spawnPowerUp() {
+    powerUps.push_back({ rand() % LEBAR, 0 });
+}
+
+// ================ RENDER ==================
+void render() {
+    vector<vector<char>> layar(TINGGI, vector<char>(LEBAR, EMPTY));
+
+    // Draw stars
+    for (auto& s : stars)
+        if (s.y >= 0 && s.y < TINGGI)
+            layar[s.y][s.x] = STAR_CHAR;
+
+    // Draw powerUps
+    for (auto& p : powerUps)
+        if (p.y >= 0 && p.y < TINGGI)
+            layar[p.y][p.x] = POWERUP_CHAR;
+
+    // Draw bullets
+    queue<Posisi> copy = peluruQueue;
+    while (!copy.empty()) {
+        Posisi p = copy.front(); copy.pop();
+        if (p.y >= 0 && p.y < TINGGI)
+            layar[p.y][p.x] = PELURU_CHAR;
     }
+
+    // Draw player
     layar[player.y][player.x] = PLAYER_CHAR;
 
     layarBersih();
-    for (auto& row : layar) {
-        for (char c : row) cout << c;
+    for (int y = 0; y < TINGGI; y++) {
+        for (int x = 0; x < LEBAR; x++)
+            cout << layar[y][x];
         cout << endl;
     }
+
+    cout << "Score: " << skor;
+    if (powerUpActive) cout << "  [POWER-UP ACTIVE]";
+    cout << endl;
 }
 
-void update() {
+// ================ UPDATE ==================
+void updatePeluru() {
     queue<Posisi> updated;
     while (!peluruQueue.empty()) {
         Posisi p = peluruQueue.front(); peluruQueue.pop();
@@ -186,62 +114,184 @@ void update() {
     peluruQueue = updated;
 }
 
-// ====== Main Game Loop ======
-void mulaiPermainan(const string& username, Leaderboard& lb) {
-    int skor = 0;
-    DWORD lastShoot = 0;
+void updateStars() {
+    vector<Posisi> newStars;
+    for (auto& s : stars) {
+        s.y++;
+        if (isCollide(s, player)) {
+            explodeSound();
+            gameOver = true;
+        } else if (s.y < TINGGI) {
+            newStars.push_back(s);
+        }
+    }
+    stars = newStars;
+}
 
-    while (true) {
+void updatePowerUps() {
+    vector<Posisi> newPowerUps;
+    for (auto& p : powerUps) {
+        p.y++;
+        if (isCollide(p, player)) {
+            powerUpActive = true;
+            powerUpStart = GetTickCount();
+            powerupSound();
+        } else if (p.y < TINGGI) {
+            newPowerUps.push_back(p);
+        }
+    }
+    powerUps = newPowerUps;
+}
+
+void checkBulletCollision() {
+    vector<Posisi> newStars;
+    while (!peluruQueue.empty()) {
+        Posisi bullet = peluruQueue.front(); peluruQueue.pop();
+        bool hit = false;
+        for (size_t i = 0; i < stars.size(); i++) {
+            if (isCollide(bullet, stars[i])) {
+                hitSound();
+                skor += 10;
+                stars.erase(stars.begin() + i);
+                hit = true;
+                break;
+            }
+        }
+        if (!hit && bullet.y >= 0)
+            peluruQueue.push(bullet);
+    }
+}
+
+// ================ SCORE SYSTEM ============
+void simpanScore(const string& username, int score) {
+    ofstream file("scoreboard.txt", ios::app);
+    file << username << " " << score << endl;
+}
+
+void tampilkanLeaderboard() {
+    ifstream file("scoreboard.txt");
+    vector<pair<string, int>> scores;
+    string name; int val;
+
+    while (file >> name >> val)
+        scores.push_back({ name, val });
+
+    sort(scores.begin(), scores.end(), [](auto& a, auto& b) {
+        return a.second > b.second;
+    });
+
+    cout << "\n=== LEADERBOARD ===\n";
+    for (auto& [n, s] : scores)
+        cout << n << " - " << s << endl;
+    cout << "===================\n";
+}
+
+// ================ GAME LOOP ==============
+void mulaiGame(const string& username) {
+    srand(time(0));
+    skor = 0;
+    gameOver = false;
+    peluruQueue = {};
+    stars.clear();
+    powerUps.clear();
+    powerUpActive = false;
+
+    DWORD lastStar = 0, lastPower = 0, lastShoot = 0;
+
+    while (!gameOver) {
         if (_kbhit()) {
             char ch = _getch();
             if (ch == 'a' && player.x > 0) player.x--;
             if (ch == 'd' && player.x < LEBAR - 1) player.x++;
-            if (ch == ' ') {
-                peluruQueue.push({player.x, player.y - 1});
-                playShootSound();
+            if (ch == ' ' || ch == 'w') {
+                peluruQueue.push({ player.x, player.y - 1 });
+                if (powerUpActive) {
+                    if (player.x > 0) peluruQueue.push({ player.x - 1, player.y - 1 });
+                    if (player.x < LEBAR - 1) peluruQueue.push({ player.x + 1, player.y - 1 });
+                }
+                shootSound();
             }
             if (ch == 'q') break;
         }
 
         DWORD now = GetTickCount();
-        if (now - lastShoot >= 500) {
-            peluruQueue.push({player.x, player.y - 1});
-            lastShoot = now;
-            skor++; // Skor bertambah otomatis tiap tembakan
+        if (now - lastStar > 700) {
+            spawnStar();
+            lastStar = now;
         }
 
-        update();
-        render(peluruQueue);
+        if (now - lastPower > 5000) {
+            spawnPowerUp();
+            lastPower = now;
+        }
+
+        if (powerUpActive && now - powerUpStart > POWERUP_DURATION) {
+            powerUpActive = false;
+        }
+
+        updatePeluru();
+        updateStars();
+        updatePowerUps();
+        checkBulletCollision();
+        render();
         Sleep(FPS);
     }
 
-    cout << "\nPermainan selesai. Skor Anda: " << skor << "\n";
-    simpanSkor(skor);
-    lb.addScore(username, skor);
+    simpanScore(username, skor);
+    cout << "\nGame Over. Skor Anda: " << skor << "\n";
 }
 
-// ====== Menu Utama ======
+// ================ LOGIN & MENU ============
+bool akunTerdaftar(const string& u, const string& p) {
+    ifstream f("akun.txt"); string x, y;
+    while (f >> x >> y) if (x == u && y == p) return true;
+    return false;
+}
+
+bool usernameSudahAda(const string& u) {
+    ifstream f("akun.txt"); string x, y;
+    while (f >> x >> y) if (x == u) return true;
+    return false;
+}
+
+void registerAkun() {
+    string u, p;
+    cout << "\nUsername Baru: "; cin >> u;
+    if (usernameSudahAda(u)) { cout << "Sudah Ada!\n"; return; }
+    cout << "Password: "; cin >> p;
+    ofstream f("akun.txt", ios::app); f << u << " " << p << endl;
+    cout << "Berhasil!\n";
+}
+
+string login() {
+    string u, p; int attempts = 3;
+    while (attempts--) {
+        cout << "\nUsername: "; cin >> u;
+        cout << "Password: "; cin >> p;
+        if (akunTerdaftar(u, p)) return u;
+        cout << "Salah. Sisa: " << attempts << endl;
+    }
+    return "";
+}
+
+// ================ MAIN ====================
 int main() {
-    string username;
-    Leaderboard leaderboard;
     int menu;
+    string user;
 
     cout << "=== ROCKET GAME ===\n1. Login\n2. Register\nPilih: ";
     cin >> menu;
-
     if (menu == 2) registerAkun();
-    username = login();
-    if (username == "") return 0;
+    user = login();
+    if (user == "") return 0;
 
     while (true) {
-        cout << "\n1. Main Game\n2. Lihat Riwayat\n3. Leaderboard\n4. Keluar\nPilih: ";
+        cout << "\n1. Main\n2. Leaderboard\n3. Keluar\nPilih: ";
         cin >> menu;
-        if (menu == 1) mulaiPermainan(username, leaderboard);
-        else if (menu == 2) tampilkanRiwayat();
-        else if (menu == 3) leaderboard.showLeaderboard();
+        if (menu == 1) mulaiGame(user);
+        else if (menu == 2) tampilkanLeaderboard();
         else break;
     }
 
-    cout << "Sampai jumpa!\n";
     return 0;
 }
