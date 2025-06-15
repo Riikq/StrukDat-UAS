@@ -2,13 +2,13 @@
 #include <string>
 #include <conio.h>
 #include <windows.h>
-#include "header/login.hpp"
-#include "header/menu.hpp"
-#include "header/skor.hpp"
-#include "header/leaderboard.hpp"
-#include "header/soundtembakan.hpp"
-#include "header/spacebar.hpp"
-#include "header/tembakOtomatis.hpp"
+#include "login.hpp"
+#include "menu.hpp"
+#include "skor.hpp"
+#include "leaderboard.hpp"
+#include "soundtembakan.hpp"
+#include "spacebar.hpp"
+#include "tembakOtomatis.hpp"
 
 using namespace std;
 
