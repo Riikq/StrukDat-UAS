@@ -1,7 +1,0 @@
-wici 0
-wici 120
-wici 50
-wici 270
-wici 40
-wici 0
-wici 0
