@@ -7,17 +7,17 @@
 
 // Fungsi untuk memutar suara tembak
 void playShootSound() {
-    PlaySound(TEXT("shoot.wav"), NULL, SND_ASYNC | SND_FILENAME);
+    PlaySound(TEXT("sound_effects/Shoot.wav"), NULL, SND_ASYNC | SND_FILENAME);
 }
 
 // Fungsi untuk memutar suara ketika peluru mengenai target
 void playHitSound() {
-    PlaySound(TEXT("hit.wav"), NULL, SND_ASYNC | SND_FILENAME);
+    PlaySound(TEXT("sound_effects/Hit.wav"), NULL, SND_ASYNC | SND_FILENAME);
 }
 
 // Fungsi untuk memutar suara ketika roket menabrak
 void playExplodeSound() {
-    PlaySound(TEXT("explode.wav"), NULL, SND_ASYNC | SND_FILENAME);
+    PlaySound(TEXT("sound_effects/Explode.wav"), NULL, SND_ASYNC | SND_FILENAME);
 }
 
 #endif // SOUND_MANAGER_H 
